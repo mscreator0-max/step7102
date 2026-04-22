@@ -72,7 +72,8 @@
             void p.offsetWidth; // 리플로우 강제 트리거
             p.classList.add('anim-success');
 
-            log.innerHTML = "<span class='text-blue-400'>[요청] WordPress -> mysql-db-3tier:3306</span><br>결과: <span class='text-green-400 font-bold'>Connection ESTABLISHED (통신 성공)</span> - 동일 네임스페이스 내 서비스 디스커버리 작동.";
+            // 2tier-ns 명칭으로 완벽히 통일
+            log.innerHTML = "<span class='text-blue-400'>[요청] WordPress -> mysql-db-2tier:3306</span><br>결과: <span class='text-green-400 font-bold'>Connection ESTABLISHED (통신 성공)</span> - 동일 네임스페이스 내 서비스 디스커버리 작동.";
         }
 
         function testExternal() {
@@ -90,11 +91,11 @@
                 nsBox.classList.add('shake', 'border-red-500');
             }, 500);
 
-            log.innerHTML = "<span class='text-red-400'>[요청] Unauthorized Pod -> mysql-db-3tier:3306</span><br>결과: <span class='text-red-500 font-bold'>Connection TIMED OUT / NXDOMAIN (통신 차단)</span> - 네임스페이스 격리 및 DNS 해석 불가로 접근이 차단됨.";
+            // 2tier-ns 명칭으로 완벽히 통일
+            log.innerHTML = "<span class='text-red-400'>[요청] Unauthorized Pod -> mysql-db-2tier:3306</span><br>결과: <span class='text-red-500 font-bold'>Connection TIMED OUT / NXDOMAIN (통신 차단)</span> - 네임스페이스 격리 및 DNS 해석 불가로 접근이 차단됨.";
             
             setTimeout(() => nsBox.classList.remove('border-red-500'), 1000);
         }
     </script>
 </body>
 </html>
-
