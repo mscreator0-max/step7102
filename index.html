@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>K8s 네임스페이스 자원 격리 시뮬레이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .packet { position: absolute; width: 12px; height: 12px; border-radius: 50%; z-index: 10; opacity: 0; }
+        @keyframes flySuccess { 0% { left: 150px; top: 120px; opacity: 1; } 100% { left: 350px; top: 120px; opacity: 0; } }
+        @keyframes flyBlock { 0% { left: -150px; top: 120px; opacity: 1; } 50% { left: 50px; top: 120px; opacity: 1; } 51% { opacity: 0; } 100% { opacity: 0; } }
+        .anim-success { animation: flySuccess 1s ease-in-out forwards; background-color: #22c55e; box-shadow: 0 0 10px #22c55e; }
+        .anim-block { animation: flyBlock 1s ease-in-out forwards; background-color: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        .shake { animation: shake 0.4s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-6 font-sans">
+    <div class="max-w-4xl w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
+        <div class="bg-slate-800 text-white p-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">네임스페이스 논리적 격리</h1>
+                <p class="text-slate-300 text-sm mt-1">2tier-ns 내부 통신 vs 외부(default) 네임스페이스의 접근 시도</p>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <div class="flex justify-between items-center relative mb-8">
+                <div class="w-1/4 p-4 border-2 border-red-300 bg-red-50 rounded-xl relative z-20">
+                    <div class="text-xs font-bold text-red-500 mb-2">Namespace: default</div>
+                    <div class="bg-white border border-red-200 p-3 rounded-lg text-center font-bold text-red-700 shadow-sm">
+                        😈 비인가 Pod
+                    </div>
+                </div>
+
+                <div id="ns-box" class="w-2/3 p-6 border-4 border-indigo-400 bg-indigo-50 rounded-2xl flex justify-between relative z-20 transition-all">
+                    <div class="absolute -top-3 left-6 bg-indigo-400 text-white text-xs font-bold px-3 py-1 rounded-full">Namespace: 2tier-ns</div>
+                    
+                    <div class="bg-white border-2 border-blue-300 p-4 rounded-xl text-center font-bold text-blue-700 shadow-sm z-20 w-5/12">
+                        🌐 WordPress
+                    </div>
+
+                    <div id="db-box" class="bg-white border-2 border-green-400 p-4 rounded-xl text-center font-bold text-green-700 shadow-sm z-20 w-5/12 transition-all">
+                        🗄️ MySQL DB
+                    </div>
+
+                    <div id="packet-success" class="packet"></div>
+                    <div id="packet-block" class="packet"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <button onclick="testInternal()" class="p-4 bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold rounded-xl border border-blue-300 transition-all">
+                    1. 내부 통신 테스트 (WP → DB)
+                </button>
+                <button onclick="testExternal()" class="p-4 bg-red-100 hover:bg-red-200 text-red-800 font-bold rounded-xl border border-red-300 transition-all">
+                    2. 외부 접근 테스트 (default → DB)
+                </button>
+            </div>
+
+            <div id="log-box" class="bg-slate-900 p-4 rounded-xl font-mono text-sm text-slate-300 min-h-[80px]">
+                대기 중... 버튼을 눌러 통신을 테스트하세요.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testInternal() {
+            const p = document.getElementById('packet-success');
+            const log = document.getElementById('log-box');
+            
+            p.classList.remove('anim-success');
+            void p.offsetWidth; // 리플로우 강제 트리거
+            p.classList.add('anim-success');
+
+            log.innerHTML = "<span class='text-blue-400'>[요청] WordPress -> mysql-db-3tier:3306</span><br>결과: <span class='text-green-400 font-bold'>Connection ESTABLISHED (통신 성공)</span> - 동일 네임스페이스 내 서비스 디스커버리 작동.";
+        }
+
+        function testExternal() {
+            const p = document.getElementById('packet-block');
+            const nsBox = document.getElementById('ns-box');
+            const log = document.getElementById('log-box');
+            
+            p.classList.remove('anim-block');
+            nsBox.classList.remove('shake', 'border-red-500');
+            
+            void p.offsetWidth; 
+            
+            p.classList.add('anim-block');
+            setTimeout(() => {
+                nsBox.classList.add('shake', 'border-red-500');
+            }, 500);
+
+            log.innerHTML = "<span class='text-red-400'>[요청] Unauthorized Pod -> mysql-db-3tier:3306</span><br>결과: <span class='text-red-500 font-bold'>Connection TIMED OUT / NXDOMAIN (통신 차단)</span> - 네임스페이스 격리 및 DNS 해석 불가로 접근이 차단됨.";
+            
+            setTimeout(() => nsBox.classList.remove('border-red-500'), 1000);
+        }
+    </script>
+</body>
+</html>
